@@ -2,6 +2,8 @@
 
 基于 Node.js 和 Edge TTS 的文本转语音工具，支持多种语音包和参数调整。
 
+🌐 **在线演示**: https://xuhui1998.github.io/text-to-voice-js/
+
 ## 功能特性
 
 - 🎤 多种中文语音包选择
@@ -83,11 +85,14 @@ pitch: 10
 ## 目录结构
 
 ```
-my-server/
+text-to-speech/
 ├── server.js          # 服务器主文件
 ├── index.html         # 前端页面
 ├── wav/               # 生成的音频文件目录
 ├── uploads/           # 临时上传文件目录
-└── package.json       # 依赖配置
+├── package.json       # 依赖配置
+├── vercel.json        # Vercel 部署配置
+├── DEPLOYMENT.md      # 详细部署指南
+└── QUICK_START.md     # 快速部署指南
 ```
 

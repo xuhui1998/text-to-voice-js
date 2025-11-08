@@ -349,6 +349,13 @@
         const { createApp, ref, reactive, onMounted, computed } = Vue;
         const { message } = antd;
 
+        // API 地址配置
+        // 开发环境：http://localhost:3000
+        // 生产环境：你的 Vercel 后端地址
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : 'https://text-to-voice-js-weld.vercel.app/'; // 替换为你的后端地址
+
         const app = createApp({
             setup() {
                 const activeTab = ref('text');
@@ -386,7 +393,7 @@
                 // 加载语音列表
                 const loadVoices = async () => {
                     try {
-                        const response = await fetch('/api/voices?lang=zh');
+                        const response = await fetch(`${API_BASE_URL}/api/voices?lang=zh`);
                         const data = await response.json();
                         
                         voiceOptions.value = [
@@ -431,7 +438,7 @@
                         const timestamp = Date.now();
                         const filename = `output_${timestamp}.mp3`;
 
-                        const response = await fetch('/api/tts', {
+                        const response = await fetch(`${API_BASE_URL}/api/tts`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -503,7 +510,7 @@
                         formData.append('volume', fileForm.volume);
                         formData.append('pitch', fileForm.pitch);
 
-                        const response = await fetch('/api/upload-and-tts', {
+                        const response = await fetch(`${API_BASE_URL}/api/upload-and-tts`, {
                             method: 'POST',
                             body: formData
                         });
