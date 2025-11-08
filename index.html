@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本转语音 (TTS) 工具</title>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Day.js (Ant Design Vue 依赖) -->
+    <script src="https://unpkg.com/dayjs@1/dayjs.min.js"></script>
+    <!-- ant design vue 3.2.15 -->
+    <script src="https://unpkg.com/dayjs/dayjs.min.js"></script>
+    <script src="https://unpkg.com/dayjs/plugin/customParseFormat.js"></script>
+    <script src="https://unpkg.com/dayjs/plugin/weekday.js"></script>
+    <script src="https://unpkg.com/dayjs/plugin/localeData.js"></script>
+    <script src="https://unpkg.com/dayjs/plugin/weekOfYear.js"></script>
+    <script src="https://unpkg.com/dayjs/plugin/weekYear.js"></script>
+    <script src="https://unpkg.com/dayjs/plugin/advancedFormat.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/ant-design-vue@3.2.15/dist/antd.min.css" />
+    <script src="https://unpkg.com/ant-design-vue@3.2.15/dist/antd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html::before {
+            width: 100%;
+            height: 100vh;
+            background: url('./assets/navbar-bg.jpg') no-repeat top right, linear-gradient(8deg, #f5f5f5 64%, #7da7f5c7);
+            opacity: 0.8;
+            bottom: 0;
+            content: '';
+            display: block;
+            left: 0;
+            position: fixed;
+            right: 0;
+            top: 0;
+            z-index: -2;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #91caff 0%, #69b1ff 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #1890ff;
+            display: flex;
+            align-items: center;
+        }
+
+        .section h2::before {
+            content: "✦";
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .slider-group {
+            margin-bottom: 24px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .slider-label span {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .slider-label .value {
+            color: #1890ff;
+            font-size: 0.9em;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .progress-container {
+            margin-top: 20px;
+        }
+
+        .result-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f5f7fa;
+            border-radius: 6px;
+            border: 1px solid #d9d9d9;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .result-header h3 {
+            color: #1890ff;
+            font-size: 1.2em;
+        }
+
+        .audio-player {
+            width: 100%;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .download-btn {
+            background: #1890ff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .download-btn:hover {
+            background: #40a9ff;
+            box-shadow: 0 2px 4px rgba(24, 144, 255, 0.3);
+        }
+
+
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="header">
+                <h1>🎤 文本转语音工具</h1>
+                <p>支持多种语音包，轻松将文本或文件转换为语音</p>
+            </div>
+
+            <div class="content">
+                <!-- 标签页 -->
+                <a-tabs v-model:activeKey="activeTab">
+                    <a-tab-pane key="text" tab="📝 文本转语音">
+                        <div class="section">
+                            <h2>选择语音包</h2>
+                            <div class="input-group">
+                                <a-select 
+                                    v-model:value="textForm.voice" 
+                                    placeholder="请选择语音包"
+                                    :options="voiceOptions"
+                                    show-search
+                                    style="width: 100%">
+                                </a-select>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <h2>输入文本</h2>
+                            <div class="input-group">
+                                <a-textarea 
+                                    v-model:value="textForm.text" 
+                                    placeholder="请输入要转换的文本..."
+                                    :rows="5"
+                                    allow-clear
+                                    show-count>
+                                </a-textarea>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <h2>语音参数调整</h2>
+                            <div class="slider-group">
+                                <div class="slider-label">
+                                    <span>语速</span>
+                                    <span class="value">{{ textForm.rate > 0 ? '+' : '' }}{{ textForm.rate }}%</span>
+                                </div>
+                                <a-slider v-model:value="textForm.rate" :min="-50" :max="50" />
+                            </div>
+                            <div class="slider-group">
+                                <div class="slider-label">
+                                    <span>音量</span>
+                                    <span class="value">{{ textForm.volume > 0 ? '+' : '' }}{{ textForm.volume }}%</span>
+                                </div>
+                                <a-slider v-model:value="textForm.volume" :min="-50" :max="50" />
+                            </div>
+                            <div class="slider-group">
+                                <div class="slider-label">
+                                    <span>音调</span>
+                                    <span class="value">{{ textForm.pitch > 0 ? '+' : '' }}{{ textForm.pitch }} Hz</span>
+                                </div>
+                                <a-slider v-model:value="textForm.pitch" :min="-50" :max="50" />
+                            </div>
+                        </div>
+
+                        <div class="button-group">
+                            <a-button type="primary" :loading="isGenerating" @click="generateFromText" block>
+                                生成语音
+                            </a-button>
+                            <a-button @click="clearText" block>清空</a-button>
+                        </div>
+                    </a-tab-pane>
+
+                    <a-tab-pane key="file" tab="📄 文件转语音">
+                        <div class="section">
+                            <h2>选择语音包</h2>
+                            <div class="input-group">
+                                <a-select 
+                                    v-model:value="fileForm.voice" 
+                                    placeholder="请选择语音包"
+                                    :options="voiceOptions"
+                                    show-search
+                                    style="width: 100%">
+                                </a-select>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <h2>上传文件</h2>
+                            <div class="input-group">
+                                <a-upload
+                                    v-model:file-list="fileList"
+                                    :before-upload="beforeUpload"
+                                    accept=".txt"
+                                    :max-count="1">
+                                    <a-button>
+                                        📁 选择文件
+                                    </a-button>
+                                </a-upload>
+                            </div>
+                            <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                                支持上传 .txt 文件（最大10MB）
+                            </p>
+                        </div>
+
+                        <div class="section">
+                            <h2>语音参数调整</h2>
+                            <div class="slider-group">
+                                <div class="slider-label">
+                                    <span>语速</span>
+                                    <span class="value">{{ fileForm.rate > 0 ? '+' : '' }}{{ fileForm.rate }}%</span>
+                                </div>
+                                <a-slider v-model:value="fileForm.rate" :min="-50" :max="50" />
+                            </div>
+                            <div class="slider-group">
+                                <div class="slider-label">
+                                    <span>音量</span>
+                                    <span class="value">{{ fileForm.volume > 0 ? '+' : '' }}{{ fileForm.volume }}%</span>
+                                </div>
+                                <a-slider v-model:value="fileForm.volume" :min="-50" :max="50" />
+                            </div>
+                            <div class="slider-group">
+                                <div class="slider-label">
+                                    <span>音调</span>
+                                    <span class="value">{{ fileForm.pitch > 0 ? '+' : '' }}{{ fileForm.pitch }} Hz</span>
+                                </div>
+                                <a-slider v-model:value="fileForm.pitch" :min="-50" :max="50" />
+                            </div>
+                        </div>
+
+                        <div class="button-group">
+                            <a-button type="primary" :loading="isGenerating" :disabled="isGenerating" @click="generateFromFile" block>
+                                生成语音
+                            </a-button>
+                            <a-button @click="clearFile" block>清空</a-button>
+                        </div>
+                    </a-tab-pane>
+                </a-tabs>
+
+                <!-- 进度条 -->
+                <div v-if="showProgress" class="progress-container">
+                    <a-progress :percent="progressRounded" status="active" />
+                </div>
+
+                <!-- 结果展示 -->
+                <div v-if="showResult" class="result-container">
+                    <div class="result-header">
+                        <h3>生成成功！</h3>
+                        <span>{{ resultTime }}</span>
+                    </div>
+                    <audio controls class="audio-player" :src="audioUrl"></audio>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a-button type="primary" :href="audioUrl" download>
+                            ⬇️ 下载音频
+                        </a-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, onMounted, computed } = Vue;
+        const { message } = antd;
+
+        const app = createApp({
+            setup() {
+                const activeTab = ref('text');
+                const isGenerating = ref(false);
+                const voiceOptions = ref([]);
+                const fileList = ref([]);
+                const showProgress = ref(false);
+                const progress = ref(0);
+                const showResult = ref(false);
+                const audioUrl = ref('');
+                const resultTime = ref('');
+
+                // 进度条保留两位小数
+                const progressRounded = computed(() => {
+                    return Number(progress.value.toFixed(2));
+                });
+
+                // 文本转语音表单
+                const textForm = reactive({
+                    voice: 'zh-CN-XiaoxiaoNeural',
+                    text: '',
+                    rate: 0,
+                    volume: 0,
+                    pitch: 0
+                });
+
+                // 文件转语音表单
+                const fileForm = reactive({
+                    voice: 'zh-CN-XiaoxiaoNeural',
+                    rate: 0,
+                    volume: 0,
+                    pitch: 0
+                });
+
+                // 加载语音列表
+                const loadVoices = async () => {
+                    try {
+                        const response = await fetch('/api/voices?lang=zh');
+                        const data = await response.json();
+                        
+                        voiceOptions.value = [
+                            { label: '晓晓（女声）', value: 'zh-CN-XiaoxiaoNeural' },
+                            ...data.voices.map(voice => ({
+                                label: voice.displayName || voice.name,
+                                value: voice.name
+                            }))
+                        ];
+                    } catch (error) {
+                        console.error('加载语音列表失败:', error);
+                        message.error('加载语音列表失败');
+                    }
+                };
+
+                // 从文本生成语音
+                const generateFromText = async () => {
+                    if (!textForm.text.trim()) {
+                        message.warning('请输入要转换的文本');
+                        return;
+                    }
+
+                    if (!textForm.voice) {
+                        message.warning('请选择语音包');
+                        return;
+                    }
+
+                    isGenerating.value = true;
+                    showProgress.value = true;
+                    showResult.value = false;
+                    progress.value = 0;
+
+                    // 模拟进度
+                    const progressInterval = setInterval(() => {
+                        if (progress.value < 90) {
+                            progress.value += Math.random() * 15;
+                            if (progress.value > 90) progress.value = 90;
+                        }
+                    }, 200);
+
+                    try {
+                        const timestamp = Date.now();
+                        const filename = `output_${timestamp}.mp3`;
+
+                        const response = await fetch('/api/tts', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                text: textForm.text,
+                                filename,
+                                voice: textForm.voice,
+                                rate: textForm.rate,
+                                volume: textForm.volume,
+                                pitch: textForm.pitch
+                            })
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok) {
+                            progress.value = 100;
+                            setTimeout(() => {
+                                showProgress.value = false;
+                                audioUrl.value = result.file;
+                                resultTime.value = new Date().toLocaleTimeString();
+                                showResult.value = true;
+                                message.success('语音生成成功！');
+                            }, 500);
+                        } else {
+                            throw new Error(result.error || '生成失败');
+                        }
+                    } catch (error) {
+                        message.error('生成失败: ' + error.message);
+                        console.error('生成语音失败:', error);
+                        showProgress.value = false;
+                    } finally {
+                        clearInterval(progressInterval);
+                        isGenerating.value = false;
+                    }
+                };
+
+                // 从文件生成语音
+                const generateFromFile = async () => {
+                    if (fileList.value.length === 0) {
+                        message.warning('请选择要上传的文件');
+                        return;
+                    }
+
+                    if (!fileForm.voice) {
+                        message.warning('请选择语音包');
+                        return;
+                    }
+
+                    isGenerating.value = true;
+                    showProgress.value = true;
+                    showResult.value = false;
+                    progress.value = 0;
+
+                    // 模拟进度
+                    const progressInterval = setInterval(() => {
+                        if (progress.value < 90) {
+                            progress.value += Math.random() * 15;
+                            if (progress.value > 90) progress.value = 90;
+                        }
+                    }, 200);
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('file', fileList.value[0].originFileObj);
+                        formData.append('voice', fileForm.voice);
+                        formData.append('rate', fileForm.rate);
+                        formData.append('volume', fileForm.volume);
+                        formData.append('pitch', fileForm.pitch);
+
+                        const response = await fetch('/api/upload-and-tts', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok) {
+                            progress.value = 100;
+                            setTimeout(() => {
+                                showProgress.value = false;
+                                audioUrl.value = result.file;
+                                resultTime.value = new Date().toLocaleTimeString();
+                                showResult.value = true;
+                                message.success('语音生成成功！');
+                            }, 500);
+                        } else {
+                            throw new Error(result.error || '生成失败');
+                        }
+                    } catch (error) {
+                        message.error('生成失败: ' + error.message);
+                        console.error('生成语音失败:', error);
+                        showProgress.value = false;
+                    } finally {
+                        clearInterval(progressInterval);
+                        isGenerating.value = false;
+                    }
+                };
+
+                // 上传前处理
+                const beforeUpload = (file) => {
+                    const isText = file.type === 'text/plain';
+                    if (!isText) {
+                        message.error('只能上传 .txt 文件！');
+                        return false;
+                    }
+                    const isLt10M = file.size / 1024 / 1024 < 10;
+                    if (!isLt10M) {
+                        message.error('文件大小不能超过 10MB！');
+                        return false;
+                    }
+                    return false; // 阻止自动上传
+                };
+
+                // 清空文本表单
+                const clearText = () => {
+                    textForm.text = '';
+                    textForm.voice = 'zh-CN-XiaoxiaoNeural';
+                    textForm.rate = 0;
+                    textForm.volume = 0;
+                    textForm.pitch = 0;
+                };
+
+                // 清空文件表单
+                const clearFile = () => {
+                    fileList.value = [];
+                    fileForm.voice = 'zh-CN-XiaoxiaoNeural';
+                    fileForm.rate = 0;
+                    fileForm.volume = 0;
+                    fileForm.pitch = 0;
+                };
+
+                onMounted(() => {
+                    loadVoices();
+                });
+
+                return {
+                    activeTab,
+                    isGenerating,
+                    voiceOptions,
+                    textForm,
+                    fileForm,
+                    fileList,
+                    showProgress,
+                    progress,
+                    progressRounded,
+                    showResult,
+                    audioUrl,
+                    resultTime,
+                    generateFromText,
+                    generateFromFile,
+                    beforeUpload,
+                    clearText,
+                    clearFile
+                };
+            }
+        });
+        
+        app.use(antd);
+        app.mount('#app');
+    </script>
+</body>
+</html>
+
