@@ -2,7 +2,7 @@
 
 基于 Node.js 和 Edge TTS 的文本转语音工具，支持多种语音包和参数调整。
 
-🌐 **在线演示**: https://xuhui1998.github.io/text-to-voice-js/
+🌐 **在线演示**: https://text-to-voice-38frwhohj-mizaos-projects.vercel.app
 
 ## 功能特性
 
