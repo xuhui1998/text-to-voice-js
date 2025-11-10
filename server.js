@@ -123,11 +123,16 @@ const app = express();
 
 // 添加 CORS 支持（允许 GitHub Pages 访问）
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    // 设置 CORS 头
+    // 注意：Access-Control-Allow-Credentials 不能与 Access-Control-Allow-Origin: * 同时使用
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Max-Age', '86400'); // 24小时
+    
+    // 处理预检请求
     if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
+        return res.status(200).end();
     }
     next();
 });
