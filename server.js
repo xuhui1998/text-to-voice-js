@@ -4,6 +4,24 @@ const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const multer = require('multer');
+const os = require('os');
+
+// 检测是否在 Vercel 环境中
+const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+
+// 根据环境选择存储目录
+const getStorageDir = (subDir) => {
+    if (isVercel) {
+        // Vercel 环境使用 /tmp 目录（唯一可写目录）
+        return path.join(os.tmpdir(), subDir);
+    } else {
+        // 本地环境使用项目目录
+        return path.join(__dirname, subDir);
+    }
+};
+
+const wavDir = getStorageDir('wav');
+const uploadsDir = getStorageDir('uploads');
 
 // 确保目录存在
 async function ensureDir(dirPath) {
@@ -119,18 +137,17 @@ app.use(express.json());
 
 // 配置 multer 用于文件上传
 const upload = multer({ 
-    dest: 'uploads/',
+    dest: uploadsDir,
     limits: { fileSize: 10 * 1024 * 1024 } // 限制文件大小为 10MB
 });
 
-// 确保 uploads 目录存在
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fsSync.existsSync(uploadsDir)) {
-    fsSync.mkdirSync(uploadsDir, { recursive: true });
-}
+// 确保目录存在
+ensureDir(uploadsDir).catch(console.error);
+ensureDir(wavDir).catch(console.error);
 
 // 静态文件服务，用于访问生成的音频文件
-app.use('/audio', express.static(path.join(__dirname, 'wav')));
+// 在 Vercel 中，我们需要通过 API 路由来提供音频文件
+app.use('/audio', express.static(wavDir));
 
 // 提供静态HTML文件
 app.use(express.static(__dirname));
@@ -149,10 +166,9 @@ app.post('/api/tts', async (req, res) => {
       return res.status(400).json({ error: 'text 和 filename 是必需的参数' });
     }
 
-    const wavDir = path.resolve('./wav');
     await ensureDir(wavDir);
     
-    const filePath = path.resolve('./wav/' + filename);
+    const filePath = path.join(wavDir, filename);
     
     const options = {};
     if (voice) options.voice = voice;
@@ -190,10 +206,9 @@ app.post('/api/tts-from-file', async (req, res) => {
       return res.status(400).json({ error: 'txt文件为空' });
     }
 
-    const wavDir = path.resolve('./wav');
     await ensureDir(wavDir);
     
-    const filePath = path.resolve('./wav/' + outputFilename);
+    const filePath = path.join(wavDir, outputFilename);
     
     const options = {};
     if (voice) options.voice = voice;
@@ -239,10 +254,9 @@ app.post('/api/upload-and-tts', upload.single('file'), async (req, res) => {
     const timestamp = Date.now();
     const filename = `output_${timestamp}.mp3`;
 
-    const wavDir = path.resolve('./wav');
     await ensureDir(wavDir);
     
-    const filePath = path.resolve('./wav/' + filename);
+    const filePath = path.join(wavDir, filename);
     
     const options = {};
     if (voice) options.voice = voice;
@@ -302,8 +316,13 @@ app.get('/', (req, res) => {
   });
 });
 
-// 监听端口
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+// 导出 Express 应用（用于 Vercel）
+module.exports = app;
+
+// 本地开发时启动服务器
+if (!isVercel) {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+}

@@ -12,9 +12,18 @@
       "dest": "server.js"
     },
     {
+      "src": "/audio/(.*)",
+      "dest": "server.js"
+    },
+    {
       "src": "/(.*)",
       "dest": "server.js"
     }
-  ]
+  ],
+  "functions": {
+    "server.js": {
+      "maxDuration": 60
+    }
+  }
 }
 
