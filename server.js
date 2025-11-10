@@ -150,18 +150,7 @@ const upload = multer({
 ensureDir(uploadsDir).catch(console.error);
 ensureDir(wavDir).catch(console.error);
 
-// 静态文件服务，用于访问生成的音频文件
-// 在 Vercel 中，我们需要通过 API 路由来提供音频文件
-app.use('/audio', express.static(wavDir));
-
-// 提供静态HTML文件
-app.use(express.static(__dirname));
-
-// 根路径返回index.html
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
+// ========== API 路由（必须在静态文件服务之前）==========
 // API端点：将文本转换为语音
 app.post('/api/tts', async (req, res) => {
   try {
@@ -305,8 +294,8 @@ app.get('/api/voices', async (req, res) => {
   }
 });
 
-// 首页
-app.get('/', (req, res) => {
+// API 信息端点（用于调试，不影响首页）
+app.get('/api', (req, res) => {
   res.json({
     message: 'TTS API 服务器运行中',
     endpoints: {
@@ -319,6 +308,18 @@ app.get('/', (req, res) => {
       fromFile: "curl -X POST http://localhost:3000/api/tts-from-file -H 'Content-Type: application/json' -d '{\"txtFilePath\":\"./myfile.txt\",\"outputFilename\":\"output.wav\"}'"
     }
   });
+});
+
+// ========== 静态文件服务（在 API 路由之后）==========
+// 静态文件服务，用于访问生成的音频文件
+app.use('/audio', express.static(wavDir));
+
+// 提供静态资源文件（assets 等）
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
+
+// 根路径返回index.html（必须在最后，作为 fallback）
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // 导出 Express 应用（用于 Vercel）

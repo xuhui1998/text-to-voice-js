@@ -351,10 +351,10 @@
 
         // API 地址配置
         // 开发环境：http://localhost:3000
-        // 生产环境：你的 Vercel 后端地址
+        // 生产环境：使用相对路径（同域名，避免跨域问题）
         const API_BASE_URL = window.location.hostname === 'localhost' 
             ? 'http://localhost:3000' 
-            : 'https://text-to-voice-js-weld.vercel.app'; // 替换为你的后端地址（注意：不要末尾斜杠）
+            : ''; // 使用相对路径，前后端同域名，无跨域问题
 
         const app = createApp({
             setup() {
